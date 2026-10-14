@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; connect-src https://api.github.com; manifest-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="theme-color" content="#111111">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cast Entrada">
+<title>Cast Comercial – Entrada</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+/* Time recording at the entrance of a parking lot (hourly customers).
+   One device per parking lot. Each stay: plate + time in; the X ends it and shows the time parked.
+   Data: own private GitHub repository, one file per parking lot and month (<lot>/<YYYY-MM>.json).
+   The token on this device can only reach that repository - never the customer data of app.castcomercial.com. */
+:root{--bg:#f3f4f7;--card:#fff;--text:#171a21;--muted:#667085;--line:#e2e5eb;--accent:#1d4ed8;--accent-soft:#e3ebff;--in:#15803d;--in-soft:#dcf5e4;--out:#c62828;--out-soft:#fde4e4;--warn:#b45309;--warn-soft:#fdeed3}
+@media (prefers-color-scheme: dark){:root{--bg:#0f1218;--card:#191d26;--text:#eef0f4;--muted:#98a2b3;--line:#2a303c;--accent:#6b93ff;--accent-soft:#1d2a4d;--in:#4ade80;--in-soft:#12301f;--out:#f87171;--out-soft:#3a1a1a;--warn:#fbbf24;--warn-soft:#3a2a0d}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:17px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+main{max-width:720px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-inset-bottom))}
+[hidden]{display:none!important}
+.top{display:flex;align-items:center;gap:12px;padding:6px 0 12px}
+.top img{width:44px;height:44px;border-radius:50%}
+.top h1{font-size:20px;margin:0;line-height:1.15}
+.top .sub{display:block;font-size:14px;color:var(--muted);font-weight:500}
+.top .clock{margin-left:auto;font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.icon{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;flex:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.new{display:flex;gap:10px}
+.new input{flex:1;min-width:0;font-size:30px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:14px 16px;border:2px solid var(--line);border-radius:14px;background:var(--card);font-variant-numeric:tabular-nums}
+.new input:focus{outline:none;border-color:var(--accent)}
+.btn{border:0;border-radius:14px;padding:0 22px;min-height:60px;font-size:20px;font-weight:700;cursor:pointer;background:var(--card);border:1px solid var(--line)}
+.btn.go{background:var(--in);color:#fff;border-color:var(--in)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn.danger{background:var(--out);color:#fff;border-color:var(--out)}
+.btn.wide{width:100%}
+.msg{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:15px}
+.msg.err{background:var(--out-soft);color:var(--out)} .msg.ok{background:var(--in-soft);color:var(--in)} .msg.warn{background:var(--warn-soft);color:var(--warn)}
+h2{font-size:17px;margin:22px 4px 8px;display:flex;align-items:baseline;gap:8px}
+h2 .n{color:var(--muted);font-weight:600}
+.list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.item{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 10px 10px 16px}
+.plate{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;font-size:22px;letter-spacing:.04em;border:2px solid var(--text);border-radius:8px;padding:2px 10px;white-space:nowrap}
+.meta{flex:1;min-width:0;color:var(--muted);font-size:15px;line-height:1.3}
+.meta b{display:block;color:var(--text);font-size:24px;font-variant-numeric:tabular-nums}
+.x{width:64px;height:64px;border-radius:14px;border:2px solid var(--out);background:var(--out-soft);color:var(--out);font-size:34px;font-weight:700;line-height:1;cursor:pointer;flex:none}
+.done .meta b{font-size:18px}
+.empty{color:var(--muted);padding:14px 16px;background:var(--card);border:1px dashed var(--line);border-radius:14px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+.pill i{width:9px;height:9px;border-radius:50%;background:var(--muted)}
+.pill.ok i{background:var(--in)} .pill.wait i{background:var(--warn)} .pill.err i{background:var(--out)}
+.ov{position:fixed;inset:0;background:rgba(10,14,22,.55);display:flex;align-items:center;justify-content:center;padding:16px;z-index:50}
+.sheet{background:var(--card);border-radius:20px;padding:20px;width:100%;max-width:440px;max-height:calc(100vh - 32px);overflow:auto}
+.sheet h3{margin:0 0 12px;font-size:20px}
+.sum{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:18px;margin:12px 0 16px}
+.sum span{color:var(--muted)} .sum b{text-align:right;font-variant-numeric:tabular-nums}
+.big{font-size:44px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;margin:6px 0}
+.price{text-align:center;color:var(--muted);font-size:15px;margin-bottom:14px}
+.row2{display:flex;gap:10px} .row2 .btn{flex:1}
+.field{margin-bottom:14px} .field label,.lbl{display:block;font-weight:650;margin-bottom:6px;font-size:15px}
+.field input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);font-size:17px}
+.lots{display:grid;gap:8px}
+.lots label{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:12px;padding:12px;font-weight:600;cursor:pointer}
+.lots label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.field .lots input{width:22px;height:22px;flex:none;margin:0;padding:0;accent-color:var(--accent)}
+.codein{font:700 22px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;letter-spacing:.08em;text-align:center}
+.hint{color:var(--muted);font-size:14px;margin:6px 0 0}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#171a21;color:#fff;border-radius:12px;padding:12px 14px;display:flex;gap:14px;align-items:center;z-index:60;max-width:calc(100% - 32px);font-size:16px}
+.toast button{background:none;border:0;color:#9db8ff;font-weight:700;cursor:pointer;font-size:16px}
+details summary{cursor:pointer;color:var(--muted);margin:22px 4px 8px;font-weight:600}
+</style>
+</head>
+<body>
+<main>
+  <!-- set-up (once per device, by the owners) -->
+  <section id="setup" hidden>
+    <div class="top"><img src="logo.png" alt=""><h1>Cast Comercial<span class="sub">Configuración del dispositivo (solo encargados)</span></h1></div>
+    <div class="card">
+      <div class="field"><span class="lbl">Estacionamiento de este dispositivo</span><div class="lots" id="sLots"></div></div>
+      <div class="field"><label for="sCode">Código de las entradas</label><input id="sCode" class="codein" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" placeholder="XXXX-XXXX-XXXX"><p class="hint">Está en app.castcomercial.com → Ajustes → Entradas. Más fácil: escaneá ahí el QR del estacionamiento con la cámara de este dispositivo.</p></div>
+      <button class="btn primary wide" id="sGo" type="button">Preparar dispositivo</button>
+      <button class="btn wide" id="sBack" type="button" hidden style="margin-top:10px">Volver sin cambios</button>
+      <div id="sMsg"></div>
+    </div>
+  </section>
+
+  <!-- the screen at the entrance -->
+  <section id="work" hidden>
+    <div class="top">
+      <img src="logo.png" alt="">
+      <h1 id="lotName">—<span class="sub"><span class="pill" id="sync"><i></i><span>—</span></span></span></h1>
+      <div class="clock" id="clock">--:--</div>
+      <button class="icon" id="gear" type="button" aria-label="Configuración" title="Configuración"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+    <form class="card" id="newForm" autocomplete="off">
+      <label class="lbl" for="plate">Patente del vehículo que entra</label>
+      <div class="new"><input id="plate" autocapitalize="characters" spellcheck="false" placeholder="AB 123 CD" enterkeyhint="go"><button class="btn go" type="submit">Entrada</button></div>
+      <div id="newMsg"></div>
+    </form>
+    <h2>Adentro ahora <span class="n" id="nIn"></span></h2>
+    <ul class="list" id="inList"></ul>
+    <details id="todayBox"><summary>Salidas de hoy <span id="nOut"></span></summary><ul class="list" id="outList"></ul></details>
+  </section>
+</main>
+<div id="layer"></div>
+<script>
+(function(){
+'use strict';
+var $ = function(s, el){ return (el || document).querySelector(s); };
+var LOTS = [['lot1', 'Lope de Vega'], ['lot2', 'Bolivia'], ['lot3', 'Condarco']];
+var KEY = { cfg:'cw.cfg.v1', data:'cw.data.v1', dirty:'cw.dirty.v1' };
+var store = {
+  get: function(k, d){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set: function(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); return true; }catch(e){ return false; } }
+};
+var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); };
+var pad = function(n){ return (n < 10 ? '0' : '') + n; };
+var uid = function(){ return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); };
+var hm = function(ts){ var d = new Date(ts); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+var ym = function(ts){ var d = new Date(ts); return d.getFullYear() + '-' + pad(d.getMonth() + 1); };
+var dayKey = function(ts){ var d = new Date(ts); return ym(ts) + '-' + pad(d.getDate()); };
+function dur(ms){ var m = Math.max(0, Math.floor(ms / 60000)), h = Math.floor(m / 60); return h + ':' + pad(m % 60); }
+function durText(ms){ var m = Math.max(0, Math.round(ms / 60000)), h = Math.floor(m / 60); m = m % 60; return (h ? h + ' h ' : '') + m + ' min'; }
+function plate(v){
+  var s = String(v || '').toUpperCase().replace(/[^A-Z0-9]/g, ''), m;
+  if((m = /^([A-Z]{2})(\d{3})([A-Z]{2})$/.exec(s))) return m[1] + ' ' + m[2] + ' ' + m[3];
+  if((m = /^([A-Z]{3})(\d{3})$/.exec(s))) return m[1] + ' ' + m[2];
+  if((m = /^([A-Z])(\d{3})([A-Z]{3})$/.exec(s))) return m[1] + m[2] + ' ' + m[3];
+  if((m = /^(\d{3})([A-Z]{3})$/.exec(s))) return m[1] + ' ' + m[2];
+  return s;
+}
+var key = function(p){ return String(p || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); };
+
+var cfg = store.get(KEY.cfg, null);              /* {repo, token, lot, name, code} */
+if(cfg && !cfg.code) cfg = null;                  /* set up the old way (token typed in): ask for the code once */
+var data = store.get(KEY.data, {});              /* id -> {id, k, in, out, t, del} */
+var dirty = store.get(KEY.dirty, {});            /* months with local changes not yet saved */
+
+/* ---------- screens ---------- */
+function show(){
+  $('#setup').hidden = !!cfg; $('#work').hidden = !cfg;
+  if(!cfg){ drawSetup(); return; }
+  $('#lotName').firstChild.nodeValue = cfg.name;
+  document.title = 'Entrada – ' + cfg.name;
+  render();
+}
+function drawSetup(lot){
+  $('#sLots').innerHTML = LOTS.map(function(l){ return '<label><input type="radio" name="sl" value="' + l[0] + '"' + ((lot || (cfg && cfg.lot)) === l[0] ? ' checked' : '') + '>' + esc(l[1]) + '</label>'; }).join('');
+  $('#sBack').hidden = !cfg;
+}
+/* ---------- access code: the owners' app publishes the token encrypted with this code ----------
+   work-access.json = AES-GCM(PBKDF2(code)) of {repo, token}. Without the code the file is useless; the token is never typed here. */
+var ACCESS_URL = 'https://api.github.com/repos/lucashcandido/Angel-parkinglot/contents/work-access.json';
+var cleanCode = function(c){ return String(c || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); };
+var showCode = function(c){ return cleanCode(c).slice(0, 12).replace(/(.{4})(?=.)/g, '$1-'); };
+var b64bytes = function(s){ var x = atob(String(s)), b = new Uint8Array(x.length); for(var i = 0; i < x.length; i++) b[i] = x.charCodeAt(i); return b; };
+async function openAccess(code){
+  var r = await fetch(ACCESS_URL, { headers: { Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+  if(r.status === 404) throw new Error('none');
+  if(!r.ok) throw new Error('net');
+  var j = await r.json(), blob = JSON.parse(b64d(j.content));
+  if(!blob || blob.v !== 1 || !(blob.it >= 100000 && blob.it <= 5000000)) throw new Error('format');
+  var base = await crypto.subtle.importKey('raw', new TextEncoder().encode(cleanCode(code)), 'PBKDF2', false, ['deriveKey']);
+  var k = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: b64bytes(blob.salt), iterations: blob.it, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  var plain;
+  try{ plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: b64bytes(blob.iv) }, k, b64bytes(blob.ct)); }catch(e){ throw new Error('code'); }
+  var conf = JSON.parse(new TextDecoder().decode(plain));
+  if(!conf || typeof conf.token !== 'string' || !/^[\w.-]+\/[\w.-]+$/.test(conf.repo || '')) throw new Error('format');
+  return conf;
+}
+$('#sCode').addEventListener('input', function(){ var c = cleanCode(this.value).slice(0, 12); this.value = c.replace(/(.{4})(?=.)/g, '$1-'); });
+$('#sCode').addEventListener('keydown', function(e){ if(e.key === 'Enter') $('#sGo').click(); });
+$('#sBack').onclick = function(){ show(); };
+async function setUp(lotId, code){
+  var msg = function(t, c){ $('#sMsg').innerHTML = '<div class="msg ' + (c || 'err') + '">' + esc(t) + '</div>'; };
+  if(!lotId) return msg('Elegí el estacionamiento.');
+  if(cleanCode(code).length !== 12) return msg('Escribí el código completo (12 letras y números).');
+  msg('Preparando…', 'warn'); $('#sGo').disabled = true;
+  try{
+    var conf = await openAccess(code);
+    var r = await fetch('https://api.github.com/repos/' + conf.repo, { headers: { Authorization: 'Bearer ' + conf.token, Accept: 'application/vnd.github+json' }, cache: 'no-store' });
+    if(r.status === 401) throw new Error('expired');
+    if(!r.ok) throw new Error('net');
+  }catch(e){
+    $('#sGo').disabled = false;
+    return msg(e.message === 'code' ? 'Código incorrecto.' : e.message === 'none' ? 'Las entradas todavía no están configuradas en app.castcomercial.com (Ajustes → Entradas).' : e.message === 'expired' ? 'El token de las entradas venció: el administrador tiene que cambiarlo en app.castcomercial.com.' : 'Sin conexión o error. Probá de nuevo.');
+  }
+  $('#sGo').disabled = false;
+  var name = LOTS.filter(function(l){ return l[0] === lotId; })[0][1];
+  var changedLot = cfg && cfg.lot !== lotId;
+  cfg = { repo: conf.repo, token: conf.token, lot: lotId, name: name, code: cleanCode(code) };
+  store.set(KEY.cfg, cfg);
+  if(changedLot){ data = {}; dirty = {}; store.set(KEY.data, data); store.set(KEY.dirty, dirty); }
+  $('#sCode').value = ''; $('#sMsg').innerHTML = '';
+  show(); syncNow();
+}
+$('#sGo').onclick = function(){ var lot = document.querySelector('input[name=sl]:checked'); setUp(lot && lot.value, $('#sCode').value); };
+/* the QR code in the owners' app: work.castcomercial.com/#c=CODE&l=lot1 sets the device up in one step */
+(function(){
+  var h = new URLSearchParams(location.hash.slice(1)), c = h.get('c'), l = h.get('l');
+  if(!c) return;
+  history.replaceState(null, '', location.pathname + location.search);     /* the code does not stay in the address bar */
+  if(cfg && cfg.code === cleanCode(c) && cfg.lot === l) return;
+  if(cfg && Object.keys(dirty).length) return;        /* never throw away entries that are not saved yet */
+  setTimeout(function(){
+    $('#setup').hidden = false; $('#work').hidden = true; drawSetup(LOTS.some(function(x){ return x[0] === l; }) ? l : '');
+    $('#sCode').value = showCode(c);
+    if(LOTS.some(function(x){ return x[0] === l; })) setUp(l, c);
+  });
+})();
+$('#gear').onclick = function(){
+  modal('<h3>Configuración</h3><p class="hint" style="margin-top:0">Solo para encargados.</p><div class="field"><label for="pinIn">Código de las entradas</label><input id="pinIn" class="codein" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX"></div><div id="pinMsg"></div><div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn primary" id="pinGo" type="button">Abrir</button></div>', function(el){
+    var inp = $('#pinIn', el);
+    inp.oninput = function(){ inp.value = showCode(inp.value); };
+    var go = function(){
+      if(cleanCode(inp.value) !== cfg.code){ $('#pinMsg', el).innerHTML = '<div class="msg err">Código incorrecto.</div>'; return; }
+      close(el);
+      $('#setup').hidden = false; $('#work').hidden = true; drawSetup(); $('#sCode').value = showCode(cfg.code);
+    };
+    $('#pinGo', el).onclick = go; inp.onkeydown = function(e){ if(e.key === 'Enter') go(); };
+    setTimeout(function(){ inp.focus(); }, 50);
+  });
+};
+
+/* ---------- entries ---------- */
+var live = function(){ return Object.keys(data).map(function(k){ return data[k]; }).filter(function(s){ return s && !s.del; }); };
+var inside = function(){ return live().filter(function(s){ return !s.out; }).sort(function(a, b){ return a.in - b.in; }); };
+function touch(s){ s.t = Date.now(); data[s.id] = s; dirty[ym(s.in)] = true; store.set(KEY.data, data); store.set(KEY.dirty, dirty); render(); syncSoon(); }
+$('#newForm').onsubmit = function(e){
+  e.preventDefault();
+  var inp = $('#plate'), p = plate(inp.value), k = key(p), m = $('#newMsg');
+  if(k.length < 5){ m.innerHTML = '<div class="msg err">Escribí la patente completa.</div>'; inp.focus(); return; }
+  var dup = inside().filter(function(s){ return key(s.k) === k; })[0];
+  if(dup){ m.innerHTML = '<div class="msg warn">' + esc(p) + ' ya está adentro desde las ' + hm(dup.in) + '.</div>'; inp.select(); return; }
+  var s = { id: uid(), k: p, in: Date.now() };
+  touch(s);
+  inp.value = ''; m.innerHTML = '';
+  toast(p + ' entró a las ' + hm(s.in) + '.', 'Deshacer', function(){ s.del = true; touch(s); });
+  inp.focus();
+};
+$('#plate').addEventListener('input', function(){ $('#newMsg').innerHTML = ''; });
+$('#plate').addEventListener('blur', function(){ this.value = plate(this.value); });
+document.addEventListener('click', function(e){
+  var x = e.target.closest('[data-x]'); if(!x) return;
+  var s = data[x.dataset.x]; if(!s || s.out) return;
+  var now = Date.now();
+  modal('<h3>Salida</h3><div style="text-align:center"><span class="plate">' + esc(s.k) + '</span></div>'
+    + '<div class="big">' + esc(durText(now - s.in)) + '</div>'
+    + '<div class="sum"><span>Entrada</span><b>' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' (' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) + ')' : '') + '</b><span>Salida</span><b>' + hm(now) + '</b></div>'
+    + '<div class="price">Precio: próximamente</div>'
+    + '<div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn danger" id="outGo" type="button">Terminar</button></div>', function(el){
+      $('#outGo', el).onclick = function(){
+        var prev = s.out; s.out = now; touch(s); close(el);
+        toast(s.k + ': ' + durText(now - s.in) + '.', 'Deshacer', function(){ s.out = prev || null; delete s.out; touch(s); });
+      };
+    });
+});
+
+/* ---------- drawing ---------- */
+function render(){
+  if(!cfg) return;
+  var now = Date.now(), ins = inside();
+  $('#nIn').textContent = ins.length ? '(' + ins.length + ')' : '';
+  $('#inList').innerHTML = ins.length ? ins.map(function(s){
+    return '<li class="item"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + dur(now - s.in) + '</b>desde las ' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' · ' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) : '') + '</div><button class="x" type="button" data-x="' + esc(s.id) + '" aria-label="Terminar ' + esc(s.k) + '" title="Terminar">✕</button></li>';
+  }).join('') : '<li class="empty">No hay vehículos adentro.</li>';
+  var today = live().filter(function(s){ return s.out && dayKey(s.out) === dayKey(now); }).sort(function(a, b){ return b.out - a.out; });
+  $('#nOut').textContent = '(' + today.length + ')';
+  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '</b>' + hm(s.in) + ' – ' + hm(s.out) + '</div></li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
+  $('#clock').textContent = hm(now);
+}
+setInterval(render, 20000);
+
+/* ---------- small windows ---------- */
+function modal(html, init){
+  var ov = document.createElement('div'); ov.className = 'ov'; ov.innerHTML = '<div class="sheet" role="dialog" aria-modal="true">' + html + '</div>';
+  ov.addEventListener('click', function(e){ if(e.target === ov || e.target.closest('[data-close]')) close(ov); });
+  $('#layer').appendChild(ov); if(init) init(ov); return ov;
+}
+function close(el){ if(el && el.parentNode) el.parentNode.removeChild(el); }
+document.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ var o = $('#layer .ov:last-child'); if(o) close(o); } });
+var toastT = 0;
+function toast(text, act, fn){
+  var old = $('.toast'); if(old) close(old);
+  var t = document.createElement('div'); t.className = 'toast'; t.innerHTML = '<span>' + esc(text) + '</span>' + (act ? '<button type="button">' + esc(act) + '</button>' : '');
+  if(act) t.querySelector('button').onclick = function(){ close(t); fn(); };
+  document.body.appendChild(t); clearTimeout(toastT); toastT = setTimeout(function(){ close(t); }, 6000);
+}
+
+/* ---------- saving to GitHub ---------- */
+var sync = { busy: false, timer: 0, state: 'wait' };
+function setSync(st, text){ sync.state = st; var p = $('#sync'); p.className = 'pill ' + st; p.lastChild.textContent = text; }
+function syncSoon(){ clearTimeout(sync.timer); setSync('wait', 'Guardando…'); sync.timer = setTimeout(syncNow, 1500); }
+function api(path, opt){
+  opt = opt || {}; opt.headers = Object.assign({ Authorization: 'Bearer ' + cfg.token, Accept: 'application/vnd.github+json' }, opt.headers || {}); opt.cache = 'no-store';
+  return fetch('https://api.github.com/repos/' + cfg.repo + '/contents/' + path, opt);
+}
+var b64e = function(s){ var b = new TextEncoder().encode(s), x = ''; for(var i = 0; i < b.length; i++) x += String.fromCharCode(b[i]); return btoa(x); };
+var b64d = function(s){ var x = atob(s.replace(/\s/g, '')), b = new Uint8Array(x.length); for(var i = 0; i < x.length; i++) b[i] = x.charCodeAt(i); return new TextDecoder().decode(b); };
+function merge(remote){        /* newer change wins, per stay */
+  var changed = false;
+  Object.keys(remote || {}).forEach(function(id){ var r = remote[id], l = data[id]; if(r && (!l || (r.t || 0) > (l.t || 0))){ data[id] = r; changed = true; } });
+  return changed;
+}
+async function loadMonth(m){
+  var r = await api(cfg.lot + '/' + m + '.json');
+  if(r.status === 404) return { sha: null, s: {} };
+  if(!r.ok) throw new Error('http ' + r.status);
+  var j = await r.json(), o = JSON.parse(b64d(j.content) || '{}');
+  return { sha: j.sha, s: o.s || {} };
+}
+async function saveMonth(m){
+  for(var tries = 0; tries < 3; tries++){
+    var cur = await loadMonth(m); merge(cur.s);
+    var mine = {}; Object.keys(data).forEach(function(id){ if(ym(data[id].in) === m) mine[id] = data[id]; });
+    var body = { message: cfg.name + ' ' + m + ' ' + new Date().toISOString(), content: b64e(JSON.stringify({ v: 1, lot: cfg.lot, name: cfg.name, month: m, s: mine }, null, 0)) };
+    if(cur.sha) body.sha = cur.sha;
+    var r = await api(cfg.lot + '/' + m + '.json', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    if(r.ok) return;
+    if(r.status !== 409 && r.status !== 422) throw new Error('http ' + r.status);
+  }
+  throw new Error('conflict');
+}
+async function syncNow(){
+  if(!cfg || sync.busy) return;
+  sync.busy = true; clearTimeout(sync.timer);
+  try{
+    var now = Date.now(), months = {}; months[ym(now)] = 1; months[ym(now - 32 * 864e5)] = 1;     /* this and last month: stays still inside */
+    Object.keys(dirty).forEach(function(m){ months[m] = 1; });
+    for(var m in months){
+      if(dirty[m]){ await saveMonth(m); delete dirty[m]; store.set(KEY.dirty, dirty); }
+      else { var cur = await loadMonth(m); merge(cur.s); }
+    }
+    store.set(KEY.data, data);
+    setSync('ok', 'Guardado ' + hm(Date.now()));
+  }catch(e){
+    if(/http 401/.test(e.message)){
+      var fresh = null; try{ fresh = await openAccess(cfg.code); }catch(x){}
+      if(fresh && fresh.token !== cfg.token){ cfg.token = fresh.token; cfg.repo = fresh.repo; store.set(KEY.cfg, cfg); sync.busy = false; return syncNow(); }   /* the owners replaced the token */
+      setSync('err', 'Token vencido: avisar al encargado');
+    }
+    else setSync(Object.keys(dirty).length ? 'wait' : 'ok', Object.keys(dirty).length ? 'Sin conexión – se guarda después' : 'Sin conexión');
+  }
+  sync.busy = false; render();
+}
+setInterval(function(){ if(cfg) syncNow(); }, 60000);
+addEventListener('online', function(){ syncNow(); });
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'visible'){ render(); syncNow(); keepAwake(); } });
+
+/* the screen stays on at the entrance */
+var lock = null;
+async function keepAwake(){ try{ if('wakeLock' in navigator && !lock){ lock = await navigator.wakeLock.request('screen'); lock.addEventListener('release', function(){ lock = null; }); } }catch(e){} }
+
+show();
+if(cfg){ setSync(Object.keys(dirty).length ? 'wait' : 'ok', '…'); syncNow(); keepAwake(); }
+window.__cw = { get data(){ return data; }, get cfg(){ return cfg; }, syncNow: syncNow };
+})();
+</script>
+</body>
+</html>

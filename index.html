@@ -162,7 +162,7 @@ function plate(v){
 /* Every Argentine plate is accepted: current (AB 123 CD), 1995-2016 (ABC 123), motorcycles (A123 BCD, 123 ABC), the old provincial
    ones and special plates. Only obvious typos are stopped: fewer than 2 or more than 10 letters/numbers. */
 /* price: every started hour counts, at least one. The rate comes from the owners' app (config.json in the stays repository). */
-var VEH = [['car', 'Auto'], ['moto', 'Moto'], ['bike', 'Bicicleta'], ['truck', 'Camión']];
+var VEH = [['car', 'Auto'], ['moto', 'Moto'], ['bike', 'Bicicleta'], ['truck', '4x4']];
 var rates = Object.assign({ car: store.get('cw.rate.v1', 4000), moto: 4000, bike: 4000, truck: 4000 }, store.get('cw.rates.v1', {}));
 var vehOf = function(s){ return VEH.some(function(v){ return v[0] === s.v; }) ? s.v : 'car'; };
 var vehName = function(v){ return (VEH.filter(function(x){ return x[0] === v; })[0] || VEH[0])[1]; };

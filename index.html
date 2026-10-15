@@ -37,7 +37,7 @@ main{max-width:720px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-i
 .new{display:flex;gap:10px}
 .new input.name{text-transform:none;letter-spacing:0}
 .plate.nm{font-family:inherit;letter-spacing:0;border-style:dashed}
-.veh{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
+.veh{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px}
 .veh button{min-height:52px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font:inherit;font-size:16px;font-weight:700;cursor:pointer;padding:4px}
 .veh button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .vtag{display:inline-block;font-size:12px;font-weight:700;color:var(--muted);border:1px solid var(--line);border-radius:6px;padding:0 6px;margin-left:6px;vertical-align:3px}
@@ -162,16 +162,17 @@ function plate(v){
 /* Every Argentine plate is accepted: current (AB 123 CD), 1995-2016 (ABC 123), motorcycles (A123 BCD, 123 ABC), the old provincial
    ones and special plates. Only obvious typos are stopped: fewer than 2 or more than 10 letters/numbers. */
 /* price: every started hour counts, at least one. The rate comes from the owners' app (config.json in the stays repository). */
-var VEH = [['car', 'Auto'], ['moto', 'Moto'], ['bike', 'Bicicleta'], ['truck', '4x4']];
+var VEH = [['car', 'Auto'], ['moto', 'Moto'], ['bike', 'Bicicleta'], ['truck', 'Camión']];
 var rates = Object.assign({ car: store.get('cw.rate.v1', 4000), moto: 4000, bike: 4000, truck: 4000 }, store.get('cw.rates.v1', {}));
 var vehOf = function(s){ return VEH.some(function(v){ return v[0] === s.v; }) ? s.v : 'car'; };
 var vehName = function(v){ return (VEH.filter(function(x){ return x[0] === v; })[0] || VEH[0])[1]; };
 var rateOf = function(s){ return rates[vehOf(s)] > 0 ? rates[vehOf(s)] : rates.car; };
 var PAY = [['mp', 'Mercado Pago'], ['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['other', 'Otro']];
 var payName = function(k){ return (PAY.filter(function(x){ return x[0] === k; })[0] || ['', ''])[1]; };
+var VEH_PICK = ['car', 'truck'];      /* offered at the entrance; moto/bike stay known for older entries */
 var veh = 'car';           /* the vehicle type chosen for the next entry; back to Auto after each one */
 function drawVeh(){
-  $('#veh').innerHTML = VEH.map(function(v){ return '<button type="button" data-v="' + v[0] + '" class="' + (veh === v[0] ? 'on' : '') + '" aria-pressed="' + (veh === v[0]) + '">' + v[1] + '</button>'; }).join('');
+  $('#veh').innerHTML = VEH.filter(function(v){ return VEH_PICK.indexOf(v[0]) >= 0; }).map(function(v){ return '<button type="button" data-v="' + v[0] + '" class="' + (veh === v[0] ? 'on' : '') + '" aria-pressed="' + (veh === v[0]) + '">' + v[1] + '</button>'; }).join('');
   var bike = veh === 'bike';
   var inp = $('#plate');
   inp.placeholder = bike ? 'p. ej. Juan' : 'AB 123 CD';

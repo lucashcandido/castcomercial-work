@@ -133,8 +133,11 @@ function plate(v){
   if((m = /^([A-Z]{3})(\d{3})$/.exec(s))) return m[1] + ' ' + m[2];
   if((m = /^([A-Z])(\d{3})([A-Z]{3})$/.exec(s))) return m[1] + m[2] + ' ' + m[3];
   if((m = /^(\d{3})([A-Z]{3})$/.exec(s))) return m[1] + ' ' + m[2];
-  return s;
+  if((m = /^([A-Z])(\d{1,7})$/.exec(s))) return m[1] + ' ' + m[2];             /* before 1995: province letter + number (B 1234567) */
+  return String(v || '').toUpperCase().replace(/[^A-Z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();   /* anything else (diplomatic, trailers, ...): as typed */
 }
+/* Every Argentine plate is accepted: current (AB 123 CD), 1995-2016 (ABC 123), motorcycles (A123 BCD, 123 ABC), the old provincial
+   ones and special plates. Only obvious typos are stopped: fewer than 2 or more than 10 letters/numbers. */
 var key = function(p){ return String(p || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); };
 
 var cfg = store.get(KEY.cfg, null);              /* {repo, token, lot, name, code} */
@@ -235,7 +238,7 @@ function touch(s){ s.t = Date.now(); data[s.id] = s; dirty[ym(s.in)] = true; sto
 $('#newForm').onsubmit = function(e){
   e.preventDefault();
   var inp = $('#plate'), p = plate(inp.value), k = key(p), m = $('#newMsg');
-  if(k.length < 5){ m.innerHTML = '<div class="msg err">Escribí la patente completa.</div>'; inp.focus(); return; }
+  if(k.length < 2 || k.length > 10){ m.innerHTML = '<div class="msg err">Escribí la patente completa.</div>'; inp.focus(); return; }
   var dup = inside().filter(function(s){ return key(s.k) === k; })[0];
   if(dup){ m.innerHTML = '<div class="msg warn">' + esc(p) + ' ya está adentro desde las ' + hm(dup.in) + '.</div>'; inp.select(); return; }
   var s = { id: uid(), k: p, in: Date.now() };

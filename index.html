@@ -33,6 +33,8 @@ main{max-width:720px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-i
 .icon{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;flex:none}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
 .new{display:flex;gap:10px}
+.new input.name{text-transform:none;letter-spacing:0}
+.plate.nm{font-family:inherit;letter-spacing:0;border-style:dashed}
 .veh{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px}
 .veh button{min-height:52px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font:inherit;font-size:16px;font-weight:700;cursor:pointer;padding:4px}
 .veh button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
@@ -157,8 +159,10 @@ var veh = 'car';           /* the vehicle type chosen for the next entry; back t
 function drawVeh(){
   $('#veh').innerHTML = VEH.map(function(v){ return '<button type="button" data-v="' + v[0] + '" class="' + (veh === v[0] ? 'on' : '') + '" aria-pressed="' + (veh === v[0]) + '">' + v[1] + '</button>'; }).join('');
   var bike = veh === 'bike';
-  $('#plate').placeholder = bike ? 'Opcional' : 'AB 123 CD';
-  $('#plateLbl').textContent = bike ? 'Patente o seña (opcional: si queda vacío, se numera sola)' : 'Patente del vehículo que entra';
+  var inp = $('#plate');
+  inp.placeholder = bike ? 'p. ej. Juan' : 'AB 123 CD';
+  inp.classList.toggle('name', bike); inp.setAttribute('autocapitalize', bike ? 'words' : 'characters');
+  $('#plateLbl').textContent = bike ? 'Nombre del cliente (bicicletas no tienen patente)' : 'Patente del vehículo que entra';
 }
 var hours = function(ms){ return Math.max(1, Math.ceil(ms / 3600000)); };
 var money = function(n){ return '$ ' + Math.round(n).toLocaleString('es-AR'); };
@@ -262,12 +266,14 @@ function touch(s){ s.t = Date.now(); data[s.id] = s; dirty[ym(s.in)] = true; sto
 $('#newForm').onsubmit = function(e){
   e.preventDefault();
   var inp = $('#plate'), p = plate(inp.value), k = key(p), m = $('#newMsg');
-  if(veh === 'bike' && !k){        /* bicycles have no plate: Bicicleta 1, 2, ... (lowest number not inside) */
-    for(var n = 1; inside().some(function(x){ return key(x.k) === 'BICICLETA' + n; }); n++);
-    p = 'Bicicleta ' + n; k = key(p);
+  if(veh === 'bike'){              /* bicycles have no plate: the customer's name tells them apart */
+    p = inp.value.replace(/\s+/g, ' ').trim().slice(0, 30); k = 'N:' + p.toLowerCase();
+    if(p.length < 2){ m.innerHTML = '<div class="msg err">Escribí el nombre del cliente.</div>'; inp.focus(); return; }
+    var dupN = inside().filter(function(x){ return vehOf(x) === 'bike' && ('N:' + String(x.k).toLowerCase()) === k; })[0];
+    if(dupN){ m.innerHTML = '<div class="msg warn">' + esc(p) + ' ya está adentro desde las ' + hm(dupN.in) + '. Agregá algo para distinguirlo (p. ej. apellido o color).</div>'; inp.select(); return; }
   }
   else if(k.length < 2 || k.length > 10){ m.innerHTML = '<div class="msg err">Escribí la patente completa.</div>'; inp.focus(); return; }
-  var dup = inside().filter(function(s){ return key(s.k) === k; })[0];
+  var dup = veh === 'bike' ? null : inside().filter(function(s){ return vehOf(s) !== 'bike' && key(s.k) === k; })[0];
   if(dup){ m.innerHTML = '<div class="msg warn">' + esc(p) + ' ya está adentro desde las ' + hm(dup.in) + '.</div>'; inp.select(); return; }
   var s = { id: uid(), k: p, v: veh, in: Date.now() };
   touch(s);
@@ -278,12 +284,12 @@ $('#newForm').onsubmit = function(e){
 $('#plate').addEventListener('input', function(){ $('#newMsg').innerHTML = ''; });
 $('#veh').addEventListener('click', function(e){ var b = e.target.closest('[data-v]'); if(!b) return; veh = b.dataset.v; drawVeh(); $('#newMsg').innerHTML = ''; $('#plate').focus(); });
 drawVeh();
-$('#plate').addEventListener('blur', function(){ this.value = plate(this.value); });
+$('#plate').addEventListener('blur', function(){ if(veh !== 'bike') this.value = plate(this.value); });
 document.addEventListener('click', function(e){
   var x = e.target.closest('[data-x]'); if(!x) return;
   var s = data[x.dataset.x]; if(!s || s.out) return;
   var now = Date.now();
-  modal('<h3>Salida</h3><div style="text-align:center"><span class="plate">' + esc(s.k) + '</span></div>'
+  modal('<h3>Salida</h3><div style="text-align:center"><span class="plate' + (vehOf(s) === 'bike' ? ' nm' : '') + '">' + esc(s.k) + '</span></div>'
     + '<div class="big">' + esc(durText(now - s.in)) + '</div>'
     + '<div class="sum"><span>Entrada</span><b>' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' (' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) + ')' : '') + '</b><span>Salida</span><b>' + hm(now) + '</b></div>'
     + '<div class="price">' + money(hours(now - s.in) * rateOf(s)) + '</div><div class="price-calc">' + vehName(vehOf(s)) + ': ' + hours(now - s.in) + ' h × ' + money(rateOf(s)) + ' (cada hora empezada)</div>'
@@ -301,11 +307,11 @@ function render(){
   var now = Date.now(), ins = inside();
   $('#nIn').textContent = ins.length ? '(' + ins.length + ')' : '';
   $('#inList').innerHTML = ins.length ? ins.map(function(s){
-    return '<li class="item"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + dur(now - s.in) + '<span class="vtag">' + vehName(vehOf(s)) + '</span></b><span class="pr">' + money(hours(now - s.in) * rateOf(s)) + '</span>desde las ' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' · ' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) : '') + '</div><button class="x" type="button" data-x="' + esc(s.id) + '" aria-label="Terminar ' + esc(s.k) + '" title="Terminar">✕</button></li>';
+    return '<li class="item"><span class="plate' + (vehOf(s) === 'bike' ? ' nm' : '') + '">' + esc(s.k) + '</span><div class="meta"><b>' + dur(now - s.in) + '<span class="vtag">' + vehName(vehOf(s)) + '</span></b><span class="pr">' + money(hours(now - s.in) * rateOf(s)) + '</span>desde las ' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' · ' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) : '') + '</div><button class="x" type="button" data-x="' + esc(s.id) + '" aria-label="Terminar ' + esc(s.k) + '" title="Terminar">✕</button></li>';
   }).join('') : '<li class="empty">No hay vehículos adentro.</li>';
   var today = live().filter(function(s){ return s.out && dayKey(s.out) === dayKey(now); }).sort(function(a, b){ return b.out - a.out; });
   $('#nOut').textContent = '(' + today.length + ')';
-  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '<span class="vtag">' + vehName(vehOf(s)) + '</span></b>' + (typeof s.p === 'number' ? '<span class="pr">' + money(s.p) + '</span>' : '') + hm(s.in) + ' – ' + hm(s.out) + '</div></li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
+  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate' + (vehOf(s) === 'bike' ? ' nm' : '') + '">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '<span class="vtag">' + vehName(vehOf(s)) + '</span></b>' + (typeof s.p === 'number' ? '<span class="pr">' + money(s.p) + '</span>' : '') + hm(s.in) + ' – ' + hm(s.out) + '</div></li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
   $('#clock').textContent = hm(now);
 }
 setInterval(render, 20000);

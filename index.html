@@ -275,7 +275,7 @@ $('#regQr').onclick = async function(){
   modal('<div class="qrbig"><h3>Registro de clientes</h3><p>Escaneá el código con la cámara de tu celular.</p><div class="qrbox" id="regQrBox">' + qrSvg(url) + '</div><button class="btn primary wide" data-close type="button">Listo</button></div>');
 };
 $('#gear').onclick = function(){
-  modal('<h3>Configuración</h3><p class="hint" style="margin-top:0">Solo para encargados.</p><div class="field"><label for="pinIn">Código de las entradas</label><input id="pinIn" class="codein" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX"></div><div id="pinMsg"></div><div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn primary" id="pinGo" type="button">Abrir</button></div>', function(el){
+  modal('<h3>Configuración</h3><div class="field"><label for="pinIn">Código de las entradas</label><input id="pinIn" class="codein" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX"></div><div id="pinMsg"></div><div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn primary" id="pinGo" type="button">Abrir</button></div>', function(el){
     var inp = $('#pinIn', el);
     inp.oninput = function(){ inp.value = showCode(inp.value); };
     var go = function(){

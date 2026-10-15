@@ -246,11 +246,7 @@ $('#newForm').onsubmit = function(e){
 };
 $('#plate').addEventListener('input', function(){ $('#newMsg').innerHTML = ''; });
 $('#plate').addEventListener('blur', function(){ this.value = plate(this.value); });
-/* AB 123 CD is the test plate: only those entries can be deleted */
-var isTest = function(s){ return key(s.k) === 'AB123CD'; };
-function delTest(s){ s.del = true; touch(s); toast(s.k + ' borrada.', 'Deshacer', function(){ delete s.del; touch(s); }); }
 document.addEventListener('click', function(e){
-  var dl = e.target.closest('[data-del]'); if(dl){ var sd = data[dl.dataset.del]; if(sd && isTest(sd)) delTest(sd); return; }
   var x = e.target.closest('[data-x]'); if(!x) return;
   var s = data[x.dataset.x]; if(!s || s.out) return;
   var now = Date.now();
@@ -258,9 +254,7 @@ document.addEventListener('click', function(e){
     + '<div class="big">' + esc(durText(now - s.in)) + '</div>'
     + '<div class="sum"><span>Entrada</span><b>' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' (' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) + ')' : '') + '</b><span>Salida</span><b>' + hm(now) + '</b></div>'
     + '<div class="price">Precio: próximamente</div>'
-    + '<div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn danger" id="outGo" type="button">Terminar</button></div>'
-    + (isTest(s) ? '<button class="btn wide" id="testDel" type="button" style="margin-top:10px">Borrar (prueba)</button>' : ''), function(el){
-      if(isTest(s)) $('#testDel', el).onclick = function(){ close(el); delTest(s); };
+    + '<div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn danger" id="outGo" type="button">Terminar</button></div>', function(el){
       $('#outGo', el).onclick = function(){
         var prev = s.out; s.out = now; touch(s); close(el);
         toast(s.k + ': ' + durText(now - s.in) + '.', 'Deshacer', function(){ s.out = prev || null; delete s.out; touch(s); });
@@ -278,7 +272,7 @@ function render(){
   }).join('') : '<li class="empty">No hay vehículos adentro.</li>';
   var today = live().filter(function(s){ return s.out && dayKey(s.out) === dayKey(now); }).sort(function(a, b){ return b.out - a.out; });
   $('#nOut').textContent = '(' + today.length + ')';
-  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '</b>' + hm(s.in) + ' – ' + hm(s.out) + '</div>' + (isTest(s) ? '<button class="x" type="button" data-del="' + esc(s.id) + '" aria-label="Borrar prueba" title="Borrar (prueba)">🗑</button>' : '') + '</li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
+  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '</b>' + hm(s.in) + ' – ' + hm(s.out) + '</div></li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
   $('#clock').textContent = hm(now);
 }
 setInterval(render, 20000);

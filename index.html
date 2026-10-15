@@ -73,10 +73,11 @@ h2 .n{color:var(--muted);font-weight:600}
 .meta .pr{display:block;font-weight:700;color:var(--text)}
 .row2{display:flex;gap:10px} .row2 .btn{flex:1}
 .btn:disabled{opacity:.45;cursor:default}
-.pay{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:0 0 8px}
+.pay{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin:0 0 8px}
 .pay button{min-height:54px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font:inherit;font-size:15px;font-weight:700;cursor:pointer;padding:4px;line-height:1.15}
 .pay button.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 .pay-lbl{font-weight:650;font-size:15px;margin:0 0 6px}
+#payOther{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);font-size:17px;margin:0 0 8px}
 #payMsg{min-height:20px;color:var(--out);font-size:14px;font-weight:600;text-align:center;margin-bottom:8px}
 .field{margin-bottom:14px} .field label,.lbl{display:block;font-weight:650;margin-bottom:6px;font-size:15px}
 .field input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);font-size:17px}
@@ -161,7 +162,7 @@ var rates = Object.assign({ car: store.get('cw.rate.v1', 4000), moto: 4000, bike
 var vehOf = function(s){ return VEH.some(function(v){ return v[0] === s.v; }) ? s.v : 'car'; };
 var vehName = function(v){ return (VEH.filter(function(x){ return x[0] === v; })[0] || VEH[0])[1]; };
 var rateOf = function(s){ return rates[vehOf(s)] > 0 ? rates[vehOf(s)] : rates.car; };
-var PAY = [['mp', 'Mercado Pago'], ['transfer', 'Transferencia'], ['cash', 'Efectivo']];
+var PAY = [['mp', 'Mercado Pago'], ['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['other', 'Otro']];
 var payName = function(k){ return (PAY.filter(function(x){ return x[0] === k; })[0] || ['', ''])[1]; };
 var veh = 'car';           /* the vehicle type chosen for the next entry; back to Auto after each one */
 function drawVeh(){
@@ -301,14 +302,14 @@ document.addEventListener('click', function(e){
     + '<div class="big">' + esc(durText(now - s.in)) + '</div>'
     + '<div class="sum"><span>Entrada</span><b>' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' (' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) + ')' : '') + '</b><span>Salida</span><b>' + hm(now) + '</b></div>'
     + '<div class="price">' + money(hours(now - s.in) * rateOf(s)) + '</div><div class="price-calc">' + vehName(vehOf(s)) + ': ' + hours(now - s.in) + ' h × ' + money(rateOf(s)) + ' (cada hora empezada)</div>'
-    + '<div class="pay-lbl">¿Cómo pagó?</div><div class="pay" id="payPick">' + PAY.map(function(x){ return '<button type="button" data-pay="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div><div id="payMsg"></div>'
+    + '<div class="pay-lbl">¿Cómo pagó?</div><div class="pay" id="payPick">' + PAY.map(function(x){ return '<button type="button" data-pay="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div><input id="payOther" hidden maxlength="40" autocomplete="off" placeholder="¿Cuál? (opcional)"><div id="payMsg"></div>'
     + '<div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn danger" id="outGo" type="button">Terminar</button></div>', function(el){
       var pay = '';
-      $('#payPick', el).onclick = function(e){ var b = e.target.closest('[data-pay]'); if(!b) return; pay = b.dataset.pay; [].forEach.call(el.querySelectorAll('[data-pay]'), function(x){ x.classList.toggle('on', x === b); }); $('#payMsg', el).textContent = ''; };
+      $('#payPick', el).onclick = function(e){ var b = e.target.closest('[data-pay]'); if(!b) return; pay = b.dataset.pay; [].forEach.call(el.querySelectorAll('[data-pay]'), function(x){ x.classList.toggle('on', x === b); }); $('#payMsg', el).textContent = ''; $('#payOther', el).hidden = pay !== 'other'; if(pay === 'other') $('#payOther', el).focus(); };
       $('#outGo', el).onclick = function(){
         if(!pay){ $('#payMsg', el).textContent = 'Elegí cómo pagó.'; return; }
-        s.out = now; s.r = rateOf(s); s.p = hours(now - s.in) * s.r; s.pay = pay; touch(s); close(el);
-        toast(s.k + ': ' + money(s.p) + ' · ' + payName(pay) + '.', 'Deshacer', function(){ delete s.out; delete s.p; delete s.r; delete s.pay; touch(s); });
+        s.out = now; s.r = rateOf(s); s.p = hours(now - s.in) * s.r; s.pay = pay; var po = $('#payOther', el).value.replace(/\s+/g, ' ').trim(); if(pay === 'other' && po) s.payN = po; else delete s.payN; touch(s); close(el);
+        toast(s.k + ': ' + money(s.p) + ' · ' + payName(pay) + '.', 'Deshacer', function(){ delete s.out; delete s.p; delete s.r; delete s.pay; delete s.payN; touch(s); });
       };
     });
 });
@@ -323,7 +324,7 @@ function render(){
   }).join('') : '<li class="empty">No hay vehículos adentro.</li>';
   var today = live().filter(function(s){ return s.out && dayKey(s.out) === dayKey(now); }).sort(function(a, b){ return b.out - a.out; });
   $('#nOut').textContent = '(' + today.length + ')';
-  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate' + (vehOf(s) === 'bike' ? ' nm' : '') + '">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '<span class="vtag">' + vehName(vehOf(s)) + '</span></b>' + (typeof s.p === 'number' ? '<span class="pr">' + money(s.p) + (s.pay ? ' · ' + payName(s.pay) : '') + '</span>' : '') + hm(s.in) + ' – ' + hm(s.out) + '</div></li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
+  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate' + (vehOf(s) === 'bike' ? ' nm' : '') + '">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '<span class="vtag">' + vehName(vehOf(s)) + '</span></b>' + (typeof s.p === 'number' ? '<span class="pr">' + money(s.p) + (s.pay ? ' · ' + payName(s.pay) + (s.payN ? ' (' + esc(s.payN) + ')' : '') : '') + '</span>' : '') + hm(s.in) + ' – ' + hm(s.out) + '</div></li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
   $('#clock').textContent = hm(now);
 }
 setInterval(render, 20000);

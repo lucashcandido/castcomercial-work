@@ -61,7 +61,9 @@ h2 .n{color:var(--muted);font-weight:600}
 .sum{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:18px;margin:12px 0 16px}
 .sum span{color:var(--muted)} .sum b{text-align:right;font-variant-numeric:tabular-nums}
 .big{font-size:44px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;margin:6px 0}
-.price{text-align:center;color:var(--muted);font-size:15px;margin-bottom:14px}
+.price{text-align:center;font-size:30px;font-weight:800;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.price-calc{text-align:center;color:var(--muted);font-size:15px;margin-bottom:14px}
+.meta .pr{display:block;font-weight:700;color:var(--text)}
 .row2{display:flex;gap:10px} .row2 .btn{flex:1}
 .field{margin-bottom:14px} .field label,.lbl{display:block;font-weight:650;margin-bottom:6px;font-size:15px}
 .field input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);font-size:17px}
@@ -138,6 +140,10 @@ function plate(v){
 }
 /* Every Argentine plate is accepted: current (AB 123 CD), 1995-2016 (ABC 123), motorcycles (A123 BCD, 123 ABC), the old provincial
    ones and special plates. Only obvious typos are stopped: fewer than 2 or more than 10 letters/numbers. */
+/* price: every started hour counts, at least one. The rate comes from the owners' app (config.json in the stays repository). */
+var rate = store.get('cw.rate.v1', 4000);
+var hours = function(ms){ return Math.max(1, Math.ceil(ms / 3600000)); };
+var money = function(n){ return '$ ' + Math.round(n).toLocaleString('es-AR'); };
 var key = function(p){ return String(p || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); };
 
 var cfg = store.get(KEY.cfg, null);              /* {repo, token, lot, name, code} */
@@ -256,11 +262,11 @@ document.addEventListener('click', function(e){
   modal('<h3>Salida</h3><div style="text-align:center"><span class="plate">' + esc(s.k) + '</span></div>'
     + '<div class="big">' + esc(durText(now - s.in)) + '</div>'
     + '<div class="sum"><span>Entrada</span><b>' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' (' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) + ')' : '') + '</b><span>Salida</span><b>' + hm(now) + '</b></div>'
-    + '<div class="price">Precio: próximamente</div>'
+    + '<div class="price">' + money(hours(now - s.in) * rate) + '</div><div class="price-calc">' + hours(now - s.in) + ' h × ' + money(rate) + ' (cada hora empezada)</div>'
     + '<div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn danger" id="outGo" type="button">Terminar</button></div>', function(el){
       $('#outGo', el).onclick = function(){
-        var prev = s.out; s.out = now; touch(s); close(el);
-        toast(s.k + ': ' + durText(now - s.in) + '.', 'Deshacer', function(){ s.out = prev || null; delete s.out; touch(s); });
+        s.out = now; s.p = hours(now - s.in) * rate; s.r = rate; touch(s); close(el);
+        toast(s.k + ': ' + durText(now - s.in) + '.', 'Deshacer', function(){ delete s.out; delete s.p; delete s.r; touch(s); });
       };
     });
 });
@@ -271,11 +277,11 @@ function render(){
   var now = Date.now(), ins = inside();
   $('#nIn').textContent = ins.length ? '(' + ins.length + ')' : '';
   $('#inList').innerHTML = ins.length ? ins.map(function(s){
-    return '<li class="item"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + dur(now - s.in) + '</b>desde las ' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' · ' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) : '') + '</div><button class="x" type="button" data-x="' + esc(s.id) + '" aria-label="Terminar ' + esc(s.k) + '" title="Terminar">✕</button></li>';
+    return '<li class="item"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + dur(now - s.in) + '</b><span class="pr">' + money(hours(now - s.in) * rate) + '</span>desde las ' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' · ' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) : '') + '</div><button class="x" type="button" data-x="' + esc(s.id) + '" aria-label="Terminar ' + esc(s.k) + '" title="Terminar">✕</button></li>';
   }).join('') : '<li class="empty">No hay vehículos adentro.</li>';
   var today = live().filter(function(s){ return s.out && dayKey(s.out) === dayKey(now); }).sort(function(a, b){ return b.out - a.out; });
   $('#nOut').textContent = '(' + today.length + ')';
-  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '</b>' + hm(s.in) + ' – ' + hm(s.out) + '</div></li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
+  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '</b>' + (typeof s.p === 'number' ? '<span class="pr">' + money(s.p) + '</span>' : '') + hm(s.in) + ' – ' + hm(s.out) + '</div></li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
   $('#clock').textContent = hm(now);
 }
 setInterval(render, 20000);
@@ -336,6 +342,7 @@ async function syncNow(){
   try{
     var now = Date.now(), months = {}; months[ym(now)] = 1; months[ym(now - 32 * 864e5)] = 1;     /* this and last month: stays still inside */
     Object.keys(dirty).forEach(function(m){ months[m] = 1; });
+    try{ var rc = await api('config.json'); if(rc.ok){ var cj = JSON.parse(b64d((await rc.json()).content)); if(cj && cj.rate > 0 && cj.rate !== rate){ rate = cj.rate; store.set('cw.rate.v1', rate); } } }catch(x){}
     for(var m in months){
       if(dirty[m]){ await saveMonth(m); delete dirty[m]; store.set(KEY.dirty, dirty); }
       else { var cur = await loadMonth(m); merge(cur.s); }
@@ -362,7 +369,7 @@ async function keepAwake(){ try{ if('wakeLock' in navigator && !lock){ lock = aw
 
 show();
 if(cfg){ setSync(Object.keys(dirty).length ? 'wait' : 'ok', '…'); syncNow(); keepAwake(); }
-window.__cw = { get data(){ return data; }, get cfg(){ return cfg; }, syncNow: syncNow };
+window.__cw = { get data(){ return data; }, get cfg(){ return cfg; }, get rate(){ return rate; }, syncNow: syncNow };
 })();
 </script>
 </body>

@@ -35,6 +35,16 @@ main{max-width:720px;margin:0 auto;padding:12px 16px calc(32px + env(safe-area-i
 .icon{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;cursor:pointer;flex:none}
 .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
 .new{display:flex;gap:10px}
+.daypick{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:6px;margin-bottom:12px}
+.dbtn{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden}
+.dbtn input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.daypick button,.daypick .dbtn{min-height:52px;border:2px solid var(--line);border-radius:12px;background:var(--card);color:var(--text);font:inherit;font-size:16px;font-weight:700;padding:4px 8px;cursor:pointer;min-width:0}
+.daypick .on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.day{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer}
+.day .dn{flex:1;min-width:0;font-weight:650} .day .dn small{display:block;color:var(--muted);font-weight:500;font-size:13.5px}
+.day .da{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.day.miss .da{color:var(--muted);font-weight:600;font-size:15px}
+.day.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
 .new input.name{text-transform:none;letter-spacing:0}
 .plate.nm{font-family:inherit;letter-spacing:0;border-style:dashed}
 .veh{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:12px}
@@ -89,9 +99,8 @@ h2 .n{color:var(--muted);font-weight:600}
 .lots label{display:flex;align-items:center;gap:10px;border:1.5px solid var(--line);border-radius:12px;padding:12px;font-weight:600;cursor:pointer}
 .lots label:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
 .field .lots input{width:22px;height:22px;flex:none;margin:0;padding:0;accent-color:var(--accent)}
-.codein{font:700 22px/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace!important;letter-spacing:.08em;text-align:center}
 .hint{color:var(--muted);font-size:14px;margin:6px 0 0}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#171a21;color:#fff;border-radius:12px;padding:12px 14px;display:flex;gap:14px;align-items:center;z-index:60;max-width:calc(100% - 32px);font-size:16px}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#171a21;color:#fff;border-radius:12px;padding:12px 14px;display:flex;gap:14px;align-items:center;z-index:60;width:max-content;max-width:calc(100% - 32px);font-size:16px}
 .toast button{background:none;border:0;color:#9db8ff;font-weight:700;cursor:pointer;font-size:16px}
 details summary{cursor:pointer;color:var(--muted);margin:22px 4px 8px;font-weight:600}
 </style>
@@ -119,16 +128,15 @@ details summary{cursor:pointer;color:var(--muted);margin:22px 4px 8px;font-weigh
       <button class="icon" id="regQr" type="button" aria-label="QR de registro para clientes" title="QR de registro para clientes"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 17h3v3h-3z"/></svg></button>
       <button class="icon" id="gear" type="button" aria-label="Configuración" title="Configuración"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
-    <form class="card" id="newForm" autocomplete="off">
-      <span class="lbl">Tipo de vehículo</span>
-      <div class="veh" id="veh" role="radiogroup" aria-label="Tipo de vehículo"></div>
-      <label class="lbl" for="plate" id="plateLbl">Patente del vehículo que entra</label>
-      <div class="new"><input id="plate" autocapitalize="characters" spellcheck="false" placeholder="AB 123 CD" enterkeyhint="go"><button class="btn go" type="submit">Entrada</button></div>
-      <div id="newMsg"></div>
+    <form class="card" id="dayForm" autocomplete="off" novalidate>
+      <span class="lbl">Día</span>
+      <div class="daypick"><button type="button" data-day="0">Hoy</button><button type="button" data-day="1">Ayer</button><label class="dbtn" id="dayOther"><span id="dayOtherTxt">Otro día</span><input type="date" id="dayDate" aria-label="Otro día"></label></div>
+      <label class="lbl" for="amt" id="amtLbl">Recaudación del día</label>
+      <div class="new"><input id="amt" inputmode="decimal" placeholder="$ 0" enterkeyhint="done" autocomplete="off"><button class="btn go" id="amtGo" type="submit">Guardar</button></div>
+      <div id="dayMsg"></div>
     </form>
-    <h2>Adentro ahora <span class="n" id="nIn"></span></h2>
-    <ul class="list" id="inList"></ul>
-    <details id="todayBox"><summary>Salidas de hoy <span id="nOut"></span></summary><ul class="list" id="outList"></ul></details>
+    <h2>Últimos días <span class="n" id="monthSum"></span></h2>
+    <ul class="list" id="dayList"></ul>
   </section>
 </main>
 <div id="layer"></div>
@@ -161,26 +169,15 @@ function plate(v){
 }
 /* Every Argentine plate is accepted: current (AB 123 CD), 1995-2016 (ABC 123), motorcycles (A123 BCD, 123 ABC), the old provincial
    ones and special plates. Only obvious typos are stopped: fewer than 2 or more than 10 letters/numbers. */
-/* price: every started hour counts, at least one. The rate comes from the owners' app (config.json in the stays repository). */
-var VEH = [['car', 'Auto'], ['moto', 'Moto'], ['bike', 'Bicicleta'], ['truck', 'Camión']];
-var rates = Object.assign({ car: store.get('cw.rate.v1', 4000), moto: 4000, bike: 4000, truck: 4000 }, store.get('cw.rates.v1', {}));
-var vehOf = function(s){ return VEH.some(function(v){ return v[0] === s.v; }) ? s.v : 'car'; };
-var vehName = function(v){ return (VEH.filter(function(x){ return x[0] === v; })[0] || VEH[0])[1]; };
-var rateOf = function(s){ return rates[vehOf(s)] > 0 ? rates[vehOf(s)] : rates.car; };
-var PAY = [['mp', 'Mercado Pago'], ['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['other', 'Otro']];
-var payName = function(k){ return (PAY.filter(function(x){ return x[0] === k; })[0] || ['', ''])[1]; };
-var VEH_PICK = ['car', 'truck'];      /* offered at the entrance; moto/bike stay known for older entries */
-var veh = 'car';           /* the vehicle type chosen for the next entry; back to Auto after each one */
-function drawVeh(){
-  $('#veh').innerHTML = VEH.filter(function(v){ return VEH_PICK.indexOf(v[0]) >= 0; }).map(function(v){ return '<button type="button" data-v="' + v[0] + '" class="' + (veh === v[0] ? 'on' : '') + '" aria-pressed="' + (veh === v[0]) + '">' + v[1] + '</button>'; }).join('');
-  var bike = veh === 'bike';
-  var inp = $('#plate');
-  inp.placeholder = bike ? 'p. ej. Juan' : 'AB 123 CD';
-  inp.classList.toggle('name', bike); inp.setAttribute('autocapitalize', bike ? 'words' : 'characters');
-  $('#plateLbl').textContent = bike ? 'Nombre del cliente (bicicletas no tienen patente)' : 'Patente del vehículo que entra';
-}
-var hours = function(ms){ return Math.max(1, Math.ceil(ms / 3600000)); };
 var money = function(n){ return '$ ' + Math.round(n).toLocaleString('es-AR'); };
+/* amounts as people type them in Argentina: 150000, 150.000, 150.000,50 */
+function parseAmt(v){
+  var s = String(v || '').replace(/[^\d.,]/g, '');
+  if(!s) return NaN;
+  if(s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+  else if(/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+  return Math.round(parseFloat(s) * 100) / 100;
+}
 var key = function(p){ return String(p || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); };
 
 var cfg = store.get(KEY.cfg, null);              /* {repo, token, lot, name, code} */
@@ -289,63 +286,67 @@ $('#gear').onclick = function(){
   });
 };
 
-/* ---------- entries ---------- */
-var live = function(){ return Object.keys(data).map(function(k){ return data[k]; }).filter(function(s){ return s && !s.del; }); };
-var inside = function(){ return live().filter(function(s){ return !s.out; }).sort(function(a, b){ return a.in - b.in; }); };
+/* ---------- daily revenue ----------
+   One amount per parking lot and day: {id:'day-<lot>-<date>', k:'day', d:'YYYY-MM-DD', a: amount, in: noon of that day, t}.
+   It lives in the month file of that day, next to older single stays; the newest change wins on every device. */
+var iso = function(dt){ return dt.getFullYear() + '-' + pad(dt.getMonth() + 1) + '-' + pad(dt.getDate()); };
+var todayIso = function(){ return iso(new Date()); };
+var dayIso = function(back){ var d = new Date(); d.setDate(d.getDate() - back); return iso(d); };
+var noon = function(d){ var p = d.split('-'); return new Date(+p[0], +p[1] - 1, +p[2], 12).getTime(); };
+var dayName = function(d){ var n = new Date(noon(d)).toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'short' }).replace(/\./g, ''); return n.charAt(0).toUpperCase() + n.slice(1); };
+var dayRec = function(d){ var r = data['day-' + cfg.lot + '-' + d]; return r && !r.del ? r : null; };
+var selDay = todayIso(), lastToday = selDay;
 function touch(s){ s.t = Date.now(); data[s.id] = s; dirty[ym(s.in)] = true; store.set(KEY.data, data); store.set(KEY.dirty, dirty); render(); syncSoon(); }
-$('#newForm').onsubmit = function(e){
+function pickDay(d){
+  if(d > todayIso()) d = todayIso();
+  selDay = d; $('#dayMsg').innerHTML = '';
+  var r = dayRec(d);
+  $('#amt').value = r ? Math.round(r.a).toLocaleString('es-AR') : '';
+  render();
+}
+$('#dayForm').addEventListener('click', function(e){ var b = e.target.closest('[data-day]'); if(b) pickDay(dayIso(+b.dataset.day)); });
+$('#dayDate').addEventListener('change', function(){ if(this.value) pickDay(this.value); });
+$('#amt').addEventListener('input', function(){ $('#dayMsg').innerHTML = ''; });
+$('#amt').addEventListener('blur', function(){ var a = parseAmt(this.value); if(a >= 0) this.value = a.toLocaleString('es-AR'); });
+$('#dayList').addEventListener('click', function(e){ var li = e.target.closest('[data-d]'); if(li){ pickDay(li.dataset.d); $('#amt').focus(); window.scrollTo(0, 0); } });
+$('#dayForm').onsubmit = function(e){
   e.preventDefault();
-  var inp = $('#plate'), p = plate(inp.value), k = key(p), m = $('#newMsg');
-  if(veh === 'bike'){              /* bicycles have no plate: the customer's name tells them apart */
-    p = inp.value.replace(/\s+/g, ' ').trim().slice(0, 30); k = 'N:' + p.toLowerCase();
-    if(p.length < 2){ m.innerHTML = '<div class="msg err">Escribí el nombre del cliente.</div>'; inp.focus(); return; }
-    var dupN = inside().filter(function(x){ return vehOf(x) === 'bike' && ('N:' + String(x.k).toLowerCase()) === k; })[0];
-    if(dupN){ m.innerHTML = '<div class="msg warn">' + esc(p) + ' ya está adentro desde las ' + hm(dupN.in) + '. Agregá algo para distinguirlo (p. ej. apellido o color).</div>'; inp.select(); return; }
+  var a = parseAmt($('#amt').value), d = selDay, m = $('#dayMsg'), old = dayRec(d);
+  if(!(a >= 0)){ m.innerHTML = '<div class="msg err">Escribí el monto del día.</div>'; $('#amt').focus(); return; }
+  var save = function(){
+    var id = 'day-' + cfg.lot + '-' + d, prev = data[id] ? JSON.parse(JSON.stringify(data[id])) : null;
+    touch({ id: id, k: 'day', d: d, a: a, in: noon(d) });
+    $('#amt').blur(); m.innerHTML = '';
+    toast(money(a) + ' guardado para ' + (d === todayIso() ? 'hoy' : dayName(d)) + '.', 'Deshacer', function(){ if(prev) touch(prev); else touch({ id: id, k: 'day', d: d, a: a, in: noon(d), del: true }); pickDay(d); });
+  };
+  if(old && old.a !== a){
+    modal('<h3>¿Reemplazar?</h3><p>Para ' + esc(dayName(d)) + ' ya está cargado <b>' + money(old.a) + '</b>.</p><p>¿Cambiarlo por <b>' + money(a) + '</b>?</p><div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn primary" id="repGo" type="button">Reemplazar</button></div>',
+      function(el){ $('#repGo', el).onclick = function(){ close(el); save(); }; });
+    return;
   }
-  else if(k.length < 2 || k.length > 10){ m.innerHTML = '<div class="msg err">Escribí la patente completa.</div>'; inp.focus(); return; }
-  var dup = veh === 'bike' ? null : inside().filter(function(s){ return vehOf(s) !== 'bike' && key(s.k) === k; })[0];
-  if(dup){ m.innerHTML = '<div class="msg warn">' + esc(p) + ' ya está adentro desde las ' + hm(dup.in) + '.</div>'; inp.select(); return; }
-  var s = { id: uid(), k: p, v: veh, in: Date.now() };
-  touch(s);
-  inp.value = ''; m.innerHTML = ''; veh = 'car'; drawVeh();
-  toast(p + ' entró a las ' + hm(s.in) + '.', 'Deshacer', function(){ s.del = true; touch(s); });
-  inp.focus();
+  save();
 };
-$('#plate').addEventListener('input', function(){ $('#newMsg').innerHTML = ''; });
-$('#veh').addEventListener('click', function(e){ var b = e.target.closest('[data-v]'); if(!b) return; veh = b.dataset.v; drawVeh(); $('#newMsg').innerHTML = ''; $('#plate').focus(); });
-drawVeh();
-$('#plate').addEventListener('blur', function(){ if(veh !== 'bike') this.value = plate(this.value); });
-document.addEventListener('click', function(e){
-  var x = e.target.closest('[data-x]'); if(!x) return;
-  var s = data[x.dataset.x]; if(!s || s.out) return;
-  var now = Date.now();
-  modal('<h3>Salida</h3><div style="text-align:center"><span class="plate' + (vehOf(s) === 'bike' ? ' nm' : '') + '">' + esc(s.k) + '</span></div>'
-    + '<div class="big">' + esc(durText(now - s.in)) + '</div>'
-    + '<div class="sum"><span>Entrada</span><b>' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' (' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) + ')' : '') + '</b><span>Salida</span><b>' + hm(now) + '</b></div>'
-    + '<div class="price">' + money(hours(now - s.in) * rateOf(s)) + '</div><div class="price-calc">' + vehName(vehOf(s)) + ': ' + hours(now - s.in) + ' h × ' + money(rateOf(s)) + ' (cada hora empezada)</div>'
-    + '<div class="pay-lbl">¿Cómo pagó?</div><div class="pay" id="payPick">' + PAY.map(function(x){ return '<button type="button" data-pay="' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div><input id="payOther" hidden maxlength="40" autocomplete="off" placeholder="¿Cuál? (opcional)"><div id="payMsg"></div>'
-    + '<div class="row2"><button class="btn" data-close type="button">Cancelar</button><button class="btn danger" id="outGo" type="button">Terminar</button></div>', function(el){
-      var pay = '';
-      $('#payPick', el).onclick = function(e){ var b = e.target.closest('[data-pay]'); if(!b) return; pay = b.dataset.pay; [].forEach.call(el.querySelectorAll('[data-pay]'), function(x){ x.classList.toggle('on', x === b); }); $('#payMsg', el).textContent = ''; $('#payOther', el).hidden = pay !== 'other'; if(pay === 'other') $('#payOther', el).focus(); };
-      $('#outGo', el).onclick = function(){
-        if(!pay){ $('#payMsg', el).textContent = 'Elegí cómo pagó.'; return; }
-        s.out = now; s.r = rateOf(s); s.p = hours(now - s.in) * s.r; s.pay = pay; var po = $('#payOther', el).value.replace(/\s+/g, ' ').trim(); if(pay === 'other' && po) s.payN = po; else delete s.payN; touch(s); close(el);
-        toast(s.k + ': ' + money(s.p) + ' · ' + payName(pay) + '.', 'Deshacer', function(){ delete s.out; delete s.p; delete s.r; delete s.pay; delete s.payN; touch(s); });
-      };
-    });
-});
 
 /* ---------- drawing ---------- */
 function render(){
   if(!cfg) return;
-  var now = Date.now(), ins = inside();
-  $('#nIn').textContent = ins.length ? '(' + ins.length + ')' : '';
-  $('#inList').innerHTML = ins.length ? ins.map(function(s){
-    return '<li class="item"><span class="plate' + (vehOf(s) === 'bike' ? ' nm' : '') + '">' + esc(s.k) + '</span><div class="meta"><b>' + dur(now - s.in) + '<span class="vtag">' + vehName(vehOf(s)) + '</span></b><span class="pr">' + money(hours(now - s.in) * rateOf(s)) + '</span>desde las ' + hm(s.in) + (dayKey(s.in) !== dayKey(now) ? ' · ' + new Date(s.in).toLocaleDateString('es-AR', { day:'numeric', month:'short' }) : '') + '</div><button class="x" type="button" data-x="' + esc(s.id) + '" aria-label="Terminar ' + esc(s.k) + '" title="Terminar">✕</button></li>';
-  }).join('') : '<li class="empty">No hay vehículos adentro.</li>';
-  var today = live().filter(function(s){ return s.out && dayKey(s.out) === dayKey(now); }).sort(function(a, b){ return b.out - a.out; });
-  $('#nOut').textContent = '(' + today.length + ')';
-  $('#outList').innerHTML = today.map(function(s){ return '<li class="item done"><span class="plate' + (vehOf(s) === 'bike' ? ' nm' : '') + '">' + esc(s.k) + '</span><div class="meta"><b>' + esc(durText(s.out - s.in)) + '<span class="vtag">' + vehName(vehOf(s)) + '</span></b>' + (typeof s.p === 'number' ? '<span class="pr">' + money(s.p) + (s.pay ? ' · ' + payName(s.pay) + (s.payN ? ' (' + esc(s.payN) + ')' : '') : '') + '</span>' : '') + hm(s.in) + ' – ' + hm(s.out) + '</div></li>'; }).join('') || '<li class="empty">Todavía ninguna salida hoy.</li>';
+  if(lastToday !== todayIso()){ if(selDay === lastToday) selDay = todayIso(); lastToday = todayIso(); }       /* the page stayed open past midnight */
+  var now = Date.now(), t = todayIso(), y = dayIso(1), r = dayRec(selDay);
+  [].forEach.call(document.querySelectorAll('.daypick [data-day]'), function(b){ b.classList.toggle('on', dayIso(+b.dataset.day) === selDay); });
+  var other = selDay !== t && selDay !== y, di = $('#dayDate');
+  di.max = t; di.value = selDay; $('#dayOther').classList.toggle('on', other);
+  $('#dayOtherTxt').textContent = other ? new Date(noon(selDay)).toLocaleDateString('es-AR', { day:'numeric', month:'short' }).replace('.', '') : 'Otro día';
+  $('#amtLbl').textContent = 'Recaudación ' + (selDay === t ? 'de hoy' : selDay === y ? 'de ayer' : 'del ' + dayName(selDay));
+  $('#amtGo').textContent = r ? 'Corregir' : 'Guardar';
+  /* the last 14 days, missing days included so nothing is forgotten */
+  var rows = [], cur = ym(now), sum = 0;
+  Object.keys(data).forEach(function(k){ var x = data[k]; if(x && x.k === 'day' && !x.del && x.d.slice(0, 7) === cur) sum += x.a || 0; });
+  for(var i = 0; i < 14; i++){
+    var d = dayIso(i), x = dayRec(d);
+    rows.push('<li class="day' + (x ? '' : ' miss') + (d === selDay ? ' sel' : '') + '" data-d="' + d + '"><div class="dn">' + esc(dayName(d)) + (i === 0 ? ' · hoy' : '') + (x ? '<small>cargado a las ' + hm(x.t) + '</small>' : '') + '</div><div class="da">' + (x ? money(x.a) : 'sin cargar') + '</div></li>');
+  }
+  $('#dayList').innerHTML = rows.join('');
+  $('#monthSum').textContent = '· este mes ' + money(sum);
   $('#clock').textContent = hm(now);
 }
 setInterval(render, 20000);
@@ -404,9 +405,8 @@ async function syncNow(){
   if(!cfg || sync.busy) return;
   sync.busy = true; clearTimeout(sync.timer);
   try{
-    var now = Date.now(), months = {}; months[ym(now)] = 1; months[ym(now - 32 * 864e5)] = 1;     /* this and last month: stays still inside */
+    var now = Date.now(), months = {}; months[ym(now)] = 1; months[ym(now - 15 * 864e5)] = 1;     /* this month and, early in a month, the last one (the list shows 14 days) */
     Object.keys(dirty).forEach(function(m){ months[m] = 1; });
-    try{ var rc = await api('config.json'); if(rc.ok){ var cj = JSON.parse(b64d((await rc.json()).content)); if(cj){ var nr = Object.assign({}, rates); if(cj.rate > 0) nr.car = cj.rate; VEH.forEach(function(v){ if(cj.rates && cj.rates[v[0]] > 0) nr[v[0]] = cj.rates[v[0]]; }); if(JSON.stringify(nr) !== JSON.stringify(rates)){ rates = nr; store.set('cw.rates.v1', rates); render(); } } } }catch(x){}
     for(var m in months){
       if(dirty[m]){ await saveMonth(m); delete dirty[m]; store.set(KEY.dirty, dirty); }
       else { var cur = await loadMonth(m); merge(cur.s); }
@@ -433,7 +433,7 @@ async function keepAwake(){ try{ if('wakeLock' in navigator && !lock){ lock = aw
 
 show();
 if(cfg){ setSync(Object.keys(dirty).length ? 'wait' : 'ok', '…'); syncNow(); keepAwake(); }
-window.__cw = { get data(){ return data; }, get cfg(){ return cfg; }, get rate(){ return rates.car; }, get rates(){ return rates; }, syncNow: syncNow };
+window.__cw = { get data(){ return data; }, get cfg(){ return cfg; }, pickDay: pickDay, syncNow: syncNow };
 })();
 </script>
 </body>

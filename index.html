@@ -315,7 +315,9 @@ $('#dayForm').onsubmit = function(e){
   if(!(a >= 0)){ m.innerHTML = '<div class="msg err">Escribí el monto del día.</div>'; $('#amt').focus(); return; }
   var save = function(){
     var id = 'day-' + cfg.lot + '-' + d, prev = data[id] ? JSON.parse(JSON.stringify(data[id])) : null;
-    touch({ id: id, k: 'day', d: d, a: a, in: noon(d) });
+    var rec = { id: id, k: 'day', d: d, a: a, in: noon(d) };
+    if(old && old.a !== a) rec.h = (old.h || []).concat([{ a: old.a, t: old.t }]);      /* corrected: earlier amounts stay visible to the owners */
+    touch(rec);
     $('#amt').blur(); m.innerHTML = '';
     toast(money(a) + ' guardado para ' + (d === todayIso() ? 'hoy' : dayName(d)) + '.', 'Deshacer', function(){ if(prev) touch(prev); else touch({ id: id, k: 'day', d: d, a: a, in: noon(d), del: true }); pickDay(d); });
   };
